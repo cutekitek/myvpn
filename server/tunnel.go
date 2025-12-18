@@ -156,7 +156,6 @@ func (s *Server) readFromTun() {
 					if err := s.udp.WriteTo(encoded, client.Addr); err != nil {
 						log.Printf("Error sending to client %d: %v", client.ID, err)
 					}
-					log.Printf("Forwarded packet to %s", destIP)
 				} else {
 					log.Printf("No client found for destination IP: %s", destIP)
 				}
