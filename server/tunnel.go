@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"log"
 	"net"
@@ -132,28 +133,28 @@ func (s *Server) handleUDPClients() {
 }
 
 func (s *Server) readFromTun() {
-	buf := make([]byte, common.MaxPacketSize)
+	buf := make([]byte, common.MaxPacketSize+4)
 
 	for {
 		select {
 		case <-s.stop:
 			return
 		default:
-			n, err := s.tun.Read(buf)
+			n, err := s.tun.Read(buf[4:])
 			if err != nil {
 				log.Printf("Error reading from TUN: %v", err)
 				continue
 			}
 
-			packet := buf[:n]
+			packet := buf[4:n]
 			destIP := common.GetDestinationIP(packet)
 			if destIP != nil {
 				s.mu.RLock()
 				client, found := s.ipToClient[destIP.String()]
 				s.mu.RUnlock()
 				if found {
-					encoded := common.EncodePacket(client.ID, packet)
-					if err := s.udp.WriteTo(encoded, client.Addr); err != nil {
+					binary.BigEndian.PutUint32(buf, client.ID)
+					if err := s.udp.WriteTo(buf[:n], client.Addr); err != nil {
 						log.Printf("Error sending to client %d: %v", client.ID, err)
 					}
 				} else {
