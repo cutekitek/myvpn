@@ -15,6 +15,7 @@ func main() {
 	flag.StringVar(&config.TunName, "tun", config.TunName, "TUN interface name")
 	flag.StringVar(&config.TunIP, "tun-ip", config.TunIP, "TUN interface IP address")
 	flag.StringVar(&config.ClientSubnet, "client-subnet", config.ClientSubnet, "Client subnet")
+	flag.IntVar(&config.MTU, "mtu", config.MTU, "MTU for TUN interface (0 = default 1464)")
 	flag.Parse()
 
 	server, err := NewServer(config)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"log"
 	"vpns/common"
@@ -15,7 +16,7 @@ type Tunnel struct {
 }
 
 func NewTunnel(config *Config) (*Tunnel, error) {
-	tun, err := common.NewTun(config.TunName, config.TunIP)
+	tun, err := common.NewTun(config.TunName, config.TunIP, config.MTU)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TUN interface: %v", err)
 	}
@@ -89,23 +90,24 @@ func (t *Tunnel) setupRouting() error {
 }
 
 func (t *Tunnel) readFromTun() {
-	buf := make([]byte, common.MaxPacketSize)
+	buf := make([]byte, common.MaxPacketSize+common.HeaderSize)
 
 	for {
 		select {
 		case <-t.stop:
 			return
 		default:
-			n, err := t.tun.Read(buf)
+			n, err := t.tun.Read(buf[common.HeaderSize:])
 			if err != nil {
 				log.Printf("Error reading from TUN: %v", err)
 				continue
 			}
 
-			packet := buf[:n]
-			encoded := common.EncodePacket(uint32(t.config.ClientID), packet)
+			// Write header directly into buffer
+			binary.BigEndian.PutUint32(buf[0:4], uint32(t.config.ClientID))
+			binary.BigEndian.PutUint32(buf[4:8], uint32(n))
 
-			if err := t.udp.Write(encoded); err != nil {
+			if err := t.udp.Write(buf[:common.HeaderSize+n]); err != nil {
 				log.Printf("Error writing to UDP: %v", err)
 			}
 		}

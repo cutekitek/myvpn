@@ -7,6 +7,7 @@ type Config struct {
 	ServerTunIP  string
 	ServerRealIP string
 	ClientID     uint64
+	MTU          int
 }
 
 func DefaultConfig() *Config {
@@ -17,5 +18,6 @@ func DefaultConfig() *Config {
 		ServerTunIP:  "10.0.0.2",
 		ServerRealIP: "",
 		ClientID:     1,
+		MTU:          0, // 0 means use DefaultMTU
 	}
 }

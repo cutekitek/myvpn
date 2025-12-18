@@ -2,8 +2,10 @@ package common
 
 import (
 	"fmt"
+	"log"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/songgao/water"
@@ -15,7 +17,10 @@ type TunInterface struct {
 	ip   string
 }
 
-func NewTun(name, ip string) (*TunInterface, error) {
+func NewTun(name, ip string, mtu int) (*TunInterface, error) {
+	if mtu <= 0 {
+		mtu = DefaultMTU
+	}
 	config := water.Config{
 		DeviceType: water.TUN,
 	}
@@ -42,6 +47,11 @@ func NewTun(name, ip string) (*TunInterface, error) {
 		return nil, fmt.Errorf("failed to setup link: %v", err)
 	}
 
+	if err := tun.setMTU(mtu); err != nil {
+		ifce.Close()
+		return nil, fmt.Errorf("failed to set MTU: %v", err)
+	}
+
 	return tun, nil
 }
 
@@ -58,6 +68,15 @@ func (t *TunInterface) setupLink() error {
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("ip link set up failed: %v, output: %s", err, output)
 	}
+	return nil
+}
+
+func (t *TunInterface) setMTU(mtu int) error {
+	cmd := exec.Command("ip", "link", "set", t.name, "mtu", strconv.Itoa(mtu))
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("ip link set mtu failed: %v, output: %s", err, output)
+	}
+	log.Printf("Set MTU=%d on interface %s", mtu, t.name)
 	return nil
 }
 

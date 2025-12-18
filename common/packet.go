@@ -7,8 +7,13 @@ import (
 )
 
 const (
-	MaxPacketSize = 1500
+	// DefaultMTU is the recommended MTU for TUN interfaces accounting for
+	// encapsulation overhead (IP header 20 + UDP header 8 + tunnel header 8 = 36 bytes)
+	DefaultMTU    = 1464
+	MaxPacketSize = DefaultMTU
 	HeaderSize    = 8
+	// SocketBufferSize is the size of UDP socket read/write buffers (2MB)
+	SocketBufferSize = 2 * 1024 * 1024
 )
 
 type PacketHeader struct {

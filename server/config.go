@@ -5,6 +5,7 @@ type Config struct {
 	TunName      string
 	TunIP        string
 	ClientSubnet string
+	MTU          int
 }
 
 func DefaultConfig() *Config {
@@ -13,5 +14,6 @@ func DefaultConfig() *Config {
 		TunName:      "tun0",
 		TunIP:        "10.0.0.2/24",
 		ClientSubnet: "10.0.0.0/24",
+		MTU:          0, // 0 means use DefaultMTU
 	}
 }

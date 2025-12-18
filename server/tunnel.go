@@ -27,7 +27,7 @@ type Server struct {
 }
 
 func NewServer(config *Config) (*Server, error) {
-	tun, err := common.NewTun(config.TunName, config.TunIP)
+	tun, err := common.NewTun(config.TunName, config.TunIP, config.MTU)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TUN interface: %v", err)
 	}
@@ -133,20 +133,20 @@ func (s *Server) handleUDPClients() {
 }
 
 func (s *Server) readFromTun() {
-	buf := make([]byte, common.MaxPacketSize+4)
+	buf := make([]byte, common.MaxPacketSize+common.HeaderSize) //clientId+length
 
 	for {
 		select {
 		case <-s.stop:
 			return
 		default:
-			n, err := s.tun.Read(buf[4:])
+			n, err := s.tun.Read(buf[common.HeaderSize:])
 			if err != nil {
 				log.Printf("Error reading from TUN: %v", err)
 				continue
 			}
 
-			packet := buf[4:n]
+			packet := buf[common.HeaderSize : common.HeaderSize+n]
 			destIP := common.GetDestinationIP(packet)
 			if destIP != nil {
 				s.mu.RLock()
@@ -154,7 +154,8 @@ func (s *Server) readFromTun() {
 				s.mu.RUnlock()
 				if found {
 					binary.BigEndian.PutUint32(buf, client.ID)
-					if err := s.udp.WriteTo(buf[:n], client.Addr); err != nil {
+					binary.BigEndian.PutUint32(buf[4:], uint32(n))
+					if err := s.udp.WriteTo(buf[:common.HeaderSize+n], client.Addr); err != nil {
 						log.Printf("Error sending to client %d: %v", client.ID, err)
 					}
 				} else {

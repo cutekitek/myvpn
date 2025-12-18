@@ -17,6 +17,7 @@ func main() {
 	flag.StringVar(&config.ServerTunIP, "server-tun-ip", config.ServerTunIP, "Server TUN IP address")
 	flag.StringVar(&config.ServerRealIP, "server-real-ip", config.ServerRealIP, "Server real IP address")
 	flag.Uint64Var(&config.ClientID, "client-id", config.ClientID, "Client ID")
+	flag.IntVar(&config.MTU, "mtu", config.MTU, "MTU for TUN interface (0 = default 1464)")
 	flag.Parse()
 
 	if config.ServerRealIP == "" {

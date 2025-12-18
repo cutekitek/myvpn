@@ -2,8 +2,18 @@ package common
 
 import (
 	"fmt"
+	"log"
 	"net"
 )
+
+func setSocketBuffers(conn *net.UDPConn) {
+	if err := conn.SetReadBuffer(SocketBufferSize); err != nil {
+		log.Printf("Warning: failed to set UDP read buffer size: %v", err)
+	}
+	if err := conn.SetWriteBuffer(SocketBufferSize); err != nil {
+		log.Printf("Warning: failed to set UDP write buffer size: %v", err)
+	}
+}
 
 type UDPServer struct {
 	conn *net.UDPConn
@@ -20,6 +30,8 @@ func NewUDPServer(port int) (*UDPServer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen on UDP port %d: %v", port, err)
 	}
+
+	setSocketBuffers(conn)
 
 	return &UDPServer{
 		conn: conn,
@@ -59,6 +71,8 @@ func NewUDPClient(serverAddr string) (*UDPClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial UDP: %v", err)
 	}
+
+	setSocketBuffers(conn)
 
 	return &UDPClient{
 		conn: conn,
